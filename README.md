@@ -1,207 +1,85 @@
----
-base_model: yandex/YandexGPT-5-Lite-8B-instruct
-library_name: peft
-pipeline_tag: text-generation
-tags:
-- base_model:adapter:yandex/YandexGPT-5-Lite-8B-instruct
-- lora
-- transformers
----
-
-# Model Card for Model ID
-
-<!-- Provide a quick summary of what the model is/does. -->
-
-
-
-## Model Details
-
-### Model Description
-
-<!-- Provide a longer summary of what this model is. -->
-
-
-
-- **Developed by:** [More Information Needed]
-- **Funded by [optional]:** [More Information Needed]
-- **Shared by [optional]:** [More Information Needed]
-- **Model type:** [More Information Needed]
-- **Language(s) (NLP):** [More Information Needed]
-- **License:** [More Information Needed]
-- **Finetuned from model [optional]:** [More Information Needed]
-
-### Model Sources [optional]
-
-<!-- Provide the basic links for the model. -->
-
-- **Repository:** [More Information Needed]
-- **Paper [optional]:** [More Information Needed]
-- **Demo [optional]:** [More Information Needed]
-
-## Uses
-
-<!-- Address questions around how the model is intended to be used, including the foreseeable users of the model and those affected by the model. -->
-
-### Direct Use
-
-<!-- This section is for the model use without fine-tuning or plugging into a larger ecosystem/app. -->
-
-[More Information Needed]
-
-### Downstream Use [optional]
-
-<!-- This section is for the model use when fine-tuned for a task, or when plugged into a larger ecosystem/app -->
-
-[More Information Needed]
-
-### Out-of-Scope Use
-
-<!-- This section addresses misuse, malicious use, and uses that the model will not work well for. -->
-
-[More Information Needed]
-
-## Bias, Risks, and Limitations
-
-<!-- This section is meant to convey both technical and sociotechnical limitations. -->
-
-[More Information Needed]
-
-### Recommendations
-
-<!-- This section is meant to convey recommendations with respect to the bias, risk, and technical limitations. -->
-
-Users (both direct and downstream) should be made aware of the risks, biases and limitations of the model. More information needed for further recommendations.
-
-## How to Get Started with the Model
-
-Use the code below to get started with the model.
-
-[More Information Needed]
-
-## Training Details
-
-### Training Data
-
-<!-- This should link to a Dataset Card, perhaps with a short stub of information on what the training data is all about as well as documentation related to data pre-processing or additional filtering. -->
-
-[More Information Needed]
-
-### Training Procedure
-
-<!-- This relates heavily to the Technical Specifications. Content here should link to that section when it is relevant to the training procedure. -->
-
-#### Preprocessing [optional]
-
-[More Information Needed]
-
-
-#### Training Hyperparameters
-
-- **Training regime:** [More Information Needed] <!--fp32, fp16 mixed precision, bf16 mixed precision, bf16 non-mixed precision, fp16 non-mixed precision, fp8 mixed precision -->
-
-#### Speeds, Sizes, Times [optional]
-
-<!-- This section provides information about throughput, start/end time, checkpoint size if relevant, etc. -->
-
-[More Information Needed]
-
-## Evaluation
-
-<!-- This section describes the evaluation protocols and provides the results. -->
-
-### Testing Data, Factors & Metrics
-
-#### Testing Data
-
-<!-- This should link to a Dataset Card if possible. -->
-
-[More Information Needed]
-
-#### Factors
-
-<!-- These are the things the evaluation is disaggregating by, e.g., subpopulations or domains. -->
-
-[More Information Needed]
-
-#### Metrics
-
-<!-- These are the evaluation metrics being used, ideally with a description of why. -->
-
-[More Information Needed]
-
-### Results
-
-[More Information Needed]
-
-#### Summary
-
-
-
-## Model Examination [optional]
-
-<!-- Relevant interpretability work for the model goes here -->
-
-[More Information Needed]
-
-## Environmental Impact
-
-<!-- Total emissions (in grams of CO2eq) and additional considerations, such as electricity usage, go here. Edit the suggested text below accordingly -->
-
-Carbon emissions can be estimated using the [Machine Learning Impact calculator](https://mlco2.github.io/impact#compute) presented in [Lacoste et al. (2019)](https://arxiv.org/abs/1910.09700).
-
-- **Hardware Type:** [More Information Needed]
-- **Hours used:** [More Information Needed]
-- **Cloud Provider:** [More Information Needed]
-- **Compute Region:** [More Information Needed]
-- **Carbon Emitted:** [More Information Needed]
-
-## Technical Specifications [optional]
-
-### Model Architecture and Objective
-
-[More Information Needed]
-
-### Compute Infrastructure
-
-[More Information Needed]
-
-#### Hardware
-
-[More Information Needed]
-
-#### Software
-
-[More Information Needed]
-
-## Citation [optional]
-
-<!-- If there is a paper or blog post introducing the model, the APA and Bibtex information for that should go in this section. -->
-
-**BibTeX:**
-
-[More Information Needed]
-
-**APA:**
-
-[More Information Needed]
-
-## Glossary [optional]
-
-<!-- If relevant, include terms and calculations in this section that can help readers understand the model or model card. -->
-
-[More Information Needed]
-
-## More Information [optional]
-
-[More Information Needed]
-
-## Model Card Authors [optional]
-
-[More Information Needed]
-
-## Model Card Contact
-
-[More Information Needed]
-### Framework versions
-
-- PEFT 0.18.1
+🧠 Как мы дообучили YandexGPT-5-Lite-8B на MacBook: подробное объяснение
+1. Исходная задача и ограничения
+У нас была задача дообучить большую языковую модель (8 миллиардов параметров) на небольшом датасете в формате CSV (вопрос-ответ). Главное ограничение: у нас нет мощного сервера с GPU, только MacBook с чипом M1/M2 и 16 ГБ оперативной памяти. Прямое полное дообучение такой модели на обычном ноутбуке невозможно из‑за нехватки памяти и времени.
+
+Поэтому мы выбрали комбинацию технологий, позволяющую сжать модель и обучать только малую часть параметров, сохранив при этом качество.
+
+2. Ключевые технологии
+Мы использовали два основных подхода:
+
+🔹 4‑битное квантование (4-bit quantization)
+Обычно веса модели хранятся в 16‑битном формате (float16). Это занимает много памяти. Мы применили квантование до 4 бит с помощью библиотеки bitsandbytes. Это уменьшает объём памяти, занимаемой моделью, примерно в 4 раза. Вместо ~16 ГБ (для 8B модели в float16) модель стала занимать ~4–5 ГБ, что позволило загрузить её на наш ноутбук.
+
+Почему это работает?
+Квантование заменяет точные числа на приближённые из ограниченного набора. Для языковых моделей это даёт незначительную потерю качества, но огромную экономию памяти.
+
+🔹 LoRA (Low-Rank Adaptation)
+Даже после квантования мы не можем обучать все 8 миллиардов параметров — это слишком долго и всё равно требует много памяти. Поэтому мы использовали LoRA — метод, который добавляет к модели небольшие обучаемые «адаптеры» (матрицы малого ранга), а основные веса оставляет замороженными.
+
+В нашем случае мы добавили адаптеры только к четырём типам слоёв внимания (q_proj, k_proj, v_proj, o_proj). Количество обучаемых параметров стало в сотни раз меньше, чем полная модель. Это позволило:
+
+Быстро обучать (всего ~30 минут на 500 примерах)
+Использовать мало памяти
+Сохранять только небольшие адаптеры, а не всю модель целиком
+3. Пошаговый процесс
+Шаг 1: Загрузка модели в 4‑битном режиме
+Мы использовали BitsAndBytesConfig, чтобы загрузить модель с 4‑битным квантованием. Указали:
+
+load_in_4bit=True — включить 4‑бит
+bnb_4bit_quant_type="nf4" — тип квантизации (normal float 4)
+bnb_4bit_compute_dtype=torch.float16 — вычисления оставить в fp16 для скорости на MPS
+Параметр device_map="auto" позволил библиотеке accelerate автоматически распределить модель по доступным устройствам (в нашем случае — MPS).
+
+Шаг 2: Настройка токенизатора
+У модели не было токена для паддинга (pad_token), поэтому мы принудительно установили pad_token = eos_token. Это нужно, чтобы при батчевой обработке последовательности одинаковой длины корректно дополнялись.
+
+Шаг 3: Подготовка модели к обучению с LoRA
+Сначала мы вызвали prepare_model_for_kbit_training — эта функция делает несколько важных вещей:
+
+Замораживает все основные веса
+Преобразует некоторые слои для корректной работы в квантизованном режиме
+Обеспечивает, чтобы градиенты не пытались обновлять замороженные веса
+Затем наложили LoRA‑адаптеры с помощью get_peft_model, передав конфигурацию с указанием целевых модулей (q_proj, k_proj, v_proj, o_proj), ранга r=16 и параметров регуляризации.
+
+Шаг 4: Подготовка датасета
+Исходные данные в CSV содержали колонки question и answer. Мы преобразовали каждую пару в текст вида:
+
+Вопрос: {question}\nОтвет: {answer}
+Затем токенизировали с параметрами:
+
+max_length=128 — обрезаем длинные последовательности, чтобы сэкономить память и ускорить обучение
+padding="max_length" — все примеры приводятся к одной длине для батчевой обработки
+truncation=True — отсекаем лишнее
+Кроме того, мы скопировали input_ids в labels, чтобы модель училась генерировать ответы (в авторегрессивных моделях labels обычно совпадают с входными токенами).
+
+Для быстрого теста мы взяли только первые 500 строк датасета. Этого достаточно, чтобы убедиться, что пайплайн работает, а уже потом можно обучать на полном датасете.
+
+Шаг 5: Настройка тренировки
+Мы использовали стандартный Trainer из transformers. Параметры подбирались исходя из ограничений по памяти:
+
+per_device_train_batch_size=1 — на MPS нельзя ставить больше 1, иначе возникает out-of-memory (OOM)
+gradient_accumulation_steps=4 — накапливаем градиенты 4 шага, эмулируя batch size 4 без дополнительного расхода памяти
+num_train_epochs=1 — один проход по датасету для теста
+fp16=True — используем половинную точность, это ускоряет вычисления на MPS
+optim="paged_adamw_8bit" — оптимизатор из bitsandbytes, который разбивает память на страницы и эффективно работает с большими моделями
+Важный момент — переменные окружения:
+
+export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+Первая отключает искусственное ограничение памяти, установленное PyTorch для MPS. Без неё система могла ошибочно считать, что памяти недостаточно, и останавливать процесс.
+Вторая включает fallback: если какая‑то операция не поддерживается на MPS (например, некоторые операции из bitsandbytes), она автоматически выполняется на CPU. Это немного медленнее, но позволяет обойти ограничения.
+Шаг 6: Запуск и сохранение
+Мы запустили скрипт и наблюдали, как loss постепенно уменьшается. После завершения обучения Trainer автоматически сохранил только адаптеры LoRA (маленький файл) в папку ./yandexgpt-5-lite-finetuned-final.
+
+4. Результат и как использовать
+Итог: Мы получили дообученную модель, которая:
+
+Работает локально на MacBook
+Занимает мало памяти (4‑битная база + маленькие адаптеры)
+Отвечает в нужном стиле на вопросы из нашего датасета
+Как использовать:
+
+Загружаем базовую модель с теми же настройками квантизации.
+Загружаем обученные адаптеры через PeftModel.from_pretrained.
+Выполняем генерацию текста.
+Этот подход масштабируем: если у нас появится больше данных или другая модель, мы можем повторить те же шаги, изменив только путь к модели и датасет.

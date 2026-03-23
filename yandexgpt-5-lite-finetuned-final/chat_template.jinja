@@ -1,0 +1,65 @@
+<s>{%- set names = {'assistant': ' Ассистент:', 'user': ' Пользователь:'} %}
+{%- set tools_prefix = 'Тебе доступны следующие функции:' %}
+
+{%- macro __render_tool(tool) %}
+    {%- set name = tool.function.name %}
+    {%- set description = tool.function.description|default('') %}
+    {%- set parameters = tool.function.parameters|tojson %}
+    {{- '\n' }}function {{ '{' }}'name':'{{ name }}',
+    {%- if tool.description %}'description':'{{ description }}',{% endif %}
+'parameters':{{ parameters }}
+    {{- '}' }}
+{%- endmacro %}
+
+{%- macro __render_tools(tools) %}
+    {{- tools_prefix }}
+    {%- for tool in tools %}
+        {{- __render_tool(tool) }}
+    {%- endfor %}
+    {{- '\n\n' }}
+{%- endmacro %}
+
+{%- macro __render_tool_message(message) %}
+    {{- '\n\nРезультат вызова' }} {{ message.name }}: {{ message.content }} {{ '\n\n' }}
+{%- endmacro %}
+
+{%- if tools -%}
+    {{- __render_tools(tools) }}
+{%- endif -%}
+
+{%- macro __render_user_message(message) %}
+{{ names.user }} {{ message.content + '\n\n' }}
+{%- endmacro %}
+
+{%- macro __render_assistant_message(message) %}
+    {{- names.assistant }}
+    {%- set call = message['function_call'] %}
+    {%- if call %}
+        {{- '\n[TOOL_CALL_START]' }}{{ call.name }}{{ '\n' }}{{ call.arguments|tojson }}
+    {%- else %}
+        {{- ' ' + message.content + '\n\n' }}
+    {%- endif %}
+{%- endmacro %}
+
+{%- if not add_generation_prompt is defined %}
+{%- set add_generation_prompt = false %}
+{%- endif %}
+
+{%- for message in messages %}
+    {%- if message['role'] == 'user' %}
+        {{- __render_user_message(message) }}
+    {%- endif %}
+
+    {%- if message.role == 'assistant' and not loop.last %}
+        {{- __render_assistant_message(message) }}
+    {%- endif %}
+
+    {%- if message.role == 'tool' %}
+        {{- __render_tool_message(message) }}
+    {%- endif %}
+
+    {%- if loop.last %}
+        {{- ' Ассистент:[SEP]' }}
+    {%- endif %}
+
+{%- endfor %}

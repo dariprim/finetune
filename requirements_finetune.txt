@@ -1,0 +1,9 @@
+torch>=2.4.0
+transformers>=4.44.0
+datasets>=2.14.0
+accelerate>=0.27.0
+peft>=0.9.0  # для эффективного fine-tuning
+pandas>=2.0.0
+scikit-learn>=1.3.0
+bitsandbytes>=0.43.0  # для 4-битной квантизации (экономия памяти)
+sentencepiece>=0.1.99  # для токенизатора
